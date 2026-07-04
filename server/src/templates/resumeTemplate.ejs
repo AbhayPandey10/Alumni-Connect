@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; line-height: 1.6; margin: 0; padding: 40px; }
+    h1 { color: #2563eb; margin-bottom: 5px; font-size: 28px; }
+    .contact-info { font-size: 14px; color: #666; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+    h2 { font-size: 18px; color: #1e40af; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-top: 20px; }
+    .item { margin-bottom: 15px; }
+    .item-header { display: flex; justify-content: space-between; font-weight: bold; }
+    .item-sub { font-style: italic; color: #555; margin-bottom: 5px; }
+    p { margin: 0; }
+  </style>
+</head>
+<body>
+  <h1><%= contact.fullName || 'Your Name' %></h1>
+  <div class="contact-info">
+    <%= contact.email %> | <%= contact.phone %> | <%= contact.linkedin %>
+  </div>
+
+  <% if (skills) { %>
+    <h2>Skills</h2>
+    <p><%= skills %></p>
+  <% } %>
+
+  <% if (experience && experience.length > 0) { %>
+    <h2>Experience</h2>
+    <% experience.forEach(function(exp) { %>
+      <div class="item">
+        <div class="item-header">
+          <span><%= exp.role %> at <%= exp.company %></span>
+          <span><%= exp.duration %></span>
+        </div>
+        <p><%= exp.description %></p>
+      </div>
+    <% }); %>
+  <% } %>
+
+  <% if (projects && projects.length > 0) { %>
+    <h2>Projects</h2>
+    <% projects.forEach(function(proj) { %>
+      <div class="item">
+        <div class="item-header"><%= proj.title %></div>
+        <div class="item-sub"><%= proj.techStack %></div>
+        <p><%= proj.description %></p>
+      </div>
+    <% }); %>
+  <% } %>
+
+  <% if (education && education.length > 0) { %>
+    <h2>Education</h2>
+    <% education.forEach(function(edu) { %>
+      <div class="item">
+        <div class="item-header">
+          <span><%= edu.institution %></span>
+          <span><%= edu.year %></span>
+        </div>
+        <p><%= edu.degree %> (GPA: <%= edu.gpa %>)</p>
+      </div>
+    <% }); %>
+  <% } %>
+</body>
+</html>
