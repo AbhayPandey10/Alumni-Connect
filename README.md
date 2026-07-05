@@ -1,5 +1,7 @@
 # AlumniConnect
 
+Live app: https://alumni-connect-ruddy.vercel.app
+
 AlumniConnect is an alumni networking platform for a college community (built around NIT Jamshedpur). It gives students a verified way to find alumni, ask for referrals, and get AI help with their resume, career plan, and interviews. Alumni use it to post openings, respond to referral requests, mentor students, and earn recognition for contributing. Admins get user management, content moderation, and a placement analytics dashboard.
 
 Everyone signs up with their official college email, so the network stays verified.
