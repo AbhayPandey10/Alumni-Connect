@@ -7,7 +7,7 @@ import {
 import ParticleRing from '../../components/ParticleRing';
 import Reveal from '../../components/Reveal';
 
-/* ---------- animated counter ---------- */
+/* animated counter */
 const CountUp = ({ to, suffix = '', duration = 1500 }) => {
   const ref = useRef(null);
   const [val, setVal] = useState(0);
@@ -33,7 +33,7 @@ const CountUp = ({ to, suffix = '', duration = 1500 }) => {
   return <span ref={ref}>{val}{suffix}</span>;
 };
 
-/* ---------- hero floating pieces ---------- */
+/* hero floating pieces */
 const FloatingStat = ({ className, value, label, delay }) => (
   <div className={`animate-float absolute ${className}`} style={{ animationDelay: delay }}>
     <div className="card px-4 py-3 shadow-lg">
@@ -53,7 +53,7 @@ const FloatingAvatar = ({ className, initials, delay, dark }) => (
   </div>
 );
 
-/* ---------- data ---------- */
+/* data */
 const FEATURES = [
   { icon: Search, title: 'Find Alumni', desc: 'Search and connect with verified alumni across companies, roles, and industries.' },
   { icon: Briefcase, title: 'Referral Opportunities', desc: 'Access exclusive job and internship referrals shared directly by alumni.' },
@@ -77,12 +77,11 @@ const FAQS = [
   { q: 'How do alumni contribute?', a: 'Alumni post opportunities, accept referral requests, and mentor students. Contributions earn recognition on the community leaderboard.' },
 ];
 
-/* ---------- section building blocks ---------- */
+/* section building blocks */
 const SectionEyebrow = ({ children }) => (
   <div className="eyebrow"><span className="h-1 w-1 rounded-full bg-ink" />{children}</div>
 );
 
-/* ==================================================================== */
 const LandingPage = () => {
   const navLinks = [
     { href: '#for-students', label: 'For Students' },
@@ -95,7 +94,7 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-paper">
-      {/* ---------------- Nav ---------------- */}
+      {/* Nav */}
       <nav className="sticky top-0 z-40 border-b border-line bg-paper/80 backdrop-blur-md">
         <div className="shell flex h-16 items-center justify-between">
           <a href="#top" className="flex items-center gap-2.5">
@@ -122,7 +121,7 @@ const LandingPage = () => {
         </div>
       </nav>
 
-      {/* ---------------- Hero ---------------- */}
+      {/* Hero */}
       <header id="top" className="relative overflow-hidden">
         <div className="grid-lines pointer-events-none absolute inset-0 opacity-40" />
         <div className="shell relative grid items-center gap-12 py-16 lg:grid-cols-2 lg:py-24">
@@ -169,7 +168,7 @@ const LandingPage = () => {
         </a>
       </header>
 
-      {/* ---------------- Stats band ---------------- */}
+      {/* Stats band */}
       <section id="stats" className="border-y border-line bg-paper-2">
         <div className="shell grid grid-cols-2 gap-y-8 py-12 md:grid-cols-4">
           {[
@@ -189,7 +188,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ---------------- Trusted companies ---------------- */}
+      {/* Trusted companies */}
       <section className="bg-ink py-14 text-paper">
         <div className="shell">
           <p className="text-sm text-paper/50">Trusted by students and alumni from</p>
@@ -206,7 +205,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ---------------- Features ---------------- */}
+      {/* Features */}
       <section id="features" className="scroll-mt-24 py-24">
         <div className="shell grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
           <Reveal>
@@ -235,7 +234,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ---------------- How it works ---------------- */}
+      {/* How it works */}
       <section id="how" className="scroll-mt-24 border-y border-line bg-paper-2 py-24">
         <div className="shell">
           <Reveal><SectionEyebrow>How it works</SectionEyebrow></Reveal>
@@ -256,7 +255,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ---------------- Dual audience ---------------- */}
+      {/* Dual audience */}
       <section className="py-24">
         <div className="shell grid gap-6 lg:grid-cols-2">
           <Reveal>
@@ -297,7 +296,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ---------------- AI Assistant ---------------- */}
+      {/* AI Assistant */}
       <section id="ai" className="scroll-mt-24 py-8 pb-24">
         <div className="shell">
           <Reveal>
@@ -335,7 +334,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ---------------- Impact / testimonial ---------------- */}
+      {/* Impact / testimonial */}
       <section id="impact" className="scroll-mt-24 bg-ink py-24 text-paper">
         <div className="shell grid gap-12 lg:grid-cols-2">
           <Reveal>
@@ -372,7 +371,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ---------------- FAQ ---------------- */}
+      {/* FAQ */}
       <section className="py-24">
         <div className="shell grid gap-12 lg:grid-cols-[0.7fr_1.3fr]">
           <Reveal>
@@ -396,7 +395,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ---------------- Final CTA ---------------- */}
+      {/* Final CTA */}
       <section className="scroll-mt-24 pb-24">
         <div className="shell">
           <Reveal>
@@ -417,7 +416,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ---------------- Footer ---------------- */}
+      {/* Footer */}
       <footer className="border-t border-line bg-paper-2">
         <div className="shell grid gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>

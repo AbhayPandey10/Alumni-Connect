@@ -9,7 +9,7 @@ const SUCCESS = ['Referred', 'Interviewing', 'Hired'];
 const REACHED_INTERVIEW = ['Interviewing', 'Hired'];
 const OFFER = 'Hired';
 
-// ---- small helpers ----
+// small helpers
 const escapeRegex = (s = '') => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const pct = (n, d) => (d > 0 ? Math.round((n / d) * 100) : 0);
 const incr = (map, key, by = 1) => { if (key == null || key === '') return; map.set(key, (map.get(key) || 0) + by); };
@@ -43,9 +43,7 @@ const monthlySeries = (items, getDate, months = 6) => {
 
 const nameOf = (u) => (u?.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : (u?.username || u?.email?.split('@')[0] || 'Unknown'));
 
-// ============================================================
 // Core computation — shared by the data + AI-insights endpoints
-// ============================================================
 export const computeAnalytics = async (filters = {}, isAdmin = false) => {
   const { company, jobType, graduationYear, department, from, to } = filters;
   const gradYear = graduationYear ? Number(graduationYear) : null;
@@ -73,7 +71,7 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
   const studentProfByUser = new Map(studentProfiles.map((p) => [String(p.user), p]));
   const alumniProfByUser = new Map(alumniProfiles.map((p) => [String(p.user), p]));
 
-  // ---- apply filters ----
+  // apply filters
   const opportunities = opportunitiesRaw.filter((o) =>
     (!jobType || o.type === jobType) &&
     (!companyRx || companyRx.test(o.company || '')) &&
@@ -94,7 +92,7 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
     alumni = alumni.filter((u) => alumniDept(u).includes(dept));
   }
 
-  // ---- referral status buckets ----
+  // referral status buckets
   const byStatus = { Pending: 0, Reviewed: 0, Referred: 0, Interviewing: 0, Hired: 0, Rejected: 0 };
   for (const r of referrals) if (byStatus[r.status] != null) byStatus[r.status] += 1;
   const totalRef = referrals.length;
@@ -103,11 +101,11 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
   const offersRef = referrals.filter((r) => r.status === OFFER).length;
   const placedStudentIds = new Set(referrals.filter((r) => r.status === OFFER).map((r) => String(r.student)));
 
-  // ---- companies ----
+  // companies
   const companySet = new Set(opportunities.map((o) => o.company).filter(Boolean));
   const salaries = opportunities.map((o) => o.salary).filter((s) => typeof s === 'number' && s > 0);
 
-  // ============ OVERVIEW KPIs ============
+  // OVERVIEW KPIs
   const kpis = {
     totalStudents: students.length,
     totalAlumni: alumni.length,
@@ -127,7 +125,7 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
     lowestPackage: salaries.length ? Math.min(...salaries) : null,
   };
 
-  // ============ REFERRAL ANALYTICS ============
+  // REFERRAL ANALYTICS
   const refByCompany = new Map();
   const refByAlumni = new Map();
   const successByAlumni = new Map();
@@ -155,7 +153,7 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
     mostSuccessfulAlumni: topEntries(successByAlumni, 5).map((e) => ({ label: nameOf(userById.get(e.label)), value: e.value })),
   };
 
-  // ============ JOB ANALYTICS ============
+  // JOB ANALYTICS
   const jobsByType = new Map();
   const jobsByCompany = new Map();
   for (const o of opportunities) { incr(jobsByType, o.type); incr(jobsByCompany, o.company); }
@@ -172,7 +170,7 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
       .map((o) => ({ label: `${o.role} · ${o.company}`, value: o.requestedBy?.length || 0 })),
   };
 
-  // ============ ALUMNI ANALYTICS ============
+  // ALUMNI ANALYTICS
   const alById = (u) => alumniProfByUser.get(String(u._id));
   const alByCompany = new Map();
   const alByGradYear = new Map();
@@ -205,7 +203,7 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
       .slice(0, 5),
   };
 
-  // ============ COMPANY ANALYTICS ============
+  // COMPANY ANALYTICS
   const hiresByCompany = new Map();
   for (const r of referrals) if (r.status === OFFER) incr(hiresByCompany, r.opportunity?.company);
   const companyAnalytics = {
@@ -215,7 +213,7 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
     topReferralCompanies: topEntries(refByCompany, 6),
   };
 
-  // ============ PLACEMENT TRENDS ============
+  // PLACEMENT TRENDS
   const placedRefs = referrals.filter((r) => r.status === OFFER);
   const placeByDept = new Map();
   const placeByYear = new Map();
@@ -234,7 +232,7 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
     byBatch: topEntries(placeByYear, 6).sort((a, b) => a.label.localeCompare(b.label)),
   };
 
-  // ============ SALARY ANALYTICS ============
+  // SALARY ANALYTICS
   const salByCompany = new Map(); // company -> [salaries]
   const salByRole = new Map();
   const salByType = new Map();
@@ -263,7 +261,7 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
     byType: avgMap(salByType),
   };
 
-  // ============ SKILLS ANALYTICS ============
+  // SKILLS ANALYTICS
   const demanded = new Map();
   for (const o of opportunities) for (const s of (o.requiredSkills || [])) incr(demanded, s.trim());
   const studentSkillCount = new Map();
@@ -282,7 +280,7 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
     gap,
   };
 
-  // ============ STUDENT ACTIVITY ANALYTICS ============
+  // STUDENT ACTIVITY ANALYTICS
   const studentsWithReferrals = new Set(referrals.map((r) => String(r.student)));
   const studentsInterviewing = new Set(referrals.filter((r) => REACHED_INTERVIEW.includes(r.status)).map((r) => String(r.student)));
   const stByDept = new Map();
@@ -310,7 +308,7 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
     avgProfileCompletion: students.length ? Math.round((completionSum / students.length) * 100) : 0,
   };
 
-  // ============ LEADERBOARDS ============
+  // LEADERBOARDS
   const refReceivedByStudent = new Map();
   for (const r of referrals) incr(refReceivedByStudent, String(r.student));
   const receivedByAlumni = new Map();
@@ -348,7 +346,7 @@ export const computeAnalytics = async (filters = {}, isAdmin = false) => {
   return result;
 };
 
-// ---- endpoints ----
+// endpoints
 export const getAnalytics = async (req, res) => {
   try {
     const isAdmin = req.user?.role === 'Admin';

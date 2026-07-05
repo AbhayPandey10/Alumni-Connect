@@ -22,7 +22,7 @@ const MESSAGE_HINTS = {
   followup: 'A polite nudge if you’ve reached out before and haven’t heard back.',
 };
 
-/* ---------------- Opportunity card ---------------- */
+/* Opportunity card */
 const OpportunityCard = ({ opp, user, onOpenModal, navigate, match, highlight }) => {
   const hasRequested = opp.requestedBy?.includes(user._id || user.id);
   const isOwner = user?._id === (opp.postedBy?._id || opp.postedBy);
@@ -144,7 +144,7 @@ const OpportunityCard = ({ opp, user, onOpenModal, navigate, match, highlight })
   );
 };
 
-/* ---------------- Page ---------------- */
+/* Page */
 const OpportunityListPage = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();

@@ -259,7 +259,7 @@ const AnalyticsPage = () => {
         <Panel title="Companies — most hires"><BarList data={data.companies.mostHires} empty="No hires yet" /></Panel>
         <Panel title="Companies — most jobs"><BarList data={data.companies.mostJobs} empty="No jobs yet" /></Panel>
 
-        {/* ---- Admin-only: individual student & alumni information ---- */}
+        {/* Admin-only: individual student & alumni information */}
         {admin && (
           <>
             <Panel title="Alumni by company"><BarList data={data.alumni.byCompany} empty="No alumni companies yet" /></Panel>

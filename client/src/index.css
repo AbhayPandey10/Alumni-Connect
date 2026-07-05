@@ -1,9 +1,6 @@
 @import "tailwindcss";
 
-/* ============================================================
-   AlumniConnect — Design System
-   Editorial · Monochrome · Verified · Timeless
-   ============================================================ */
+/* AlumniConnect design system */
 
 @theme {
   /* Core palette — solid, no gradients */
@@ -27,7 +24,7 @@
   --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
 }
 
-/* ---------- Base ---------- */
+/* Base */
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
@@ -70,7 +67,7 @@
   }
 }
 
-/* ---------- Components ---------- */
+/* Components */
 @layer components {
   /* Section rhythm + centered measure */
   .shell {
@@ -87,7 +84,7 @@
     @apply font-bold leading-[0.95] tracking-[-0.03em] text-ink;
   }
 
-  /* --- Buttons --- */
+  /* Buttons */
   .btn, .btn-primary, .btn-secondary, .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold
            transition-all duration-200 select-none;
@@ -107,7 +104,7 @@
     @apply bg-transparent text-muted hover:text-ink hover:bg-paper-2;
   }
 
-  /* --- Card --- */
+  /* Card */
   .card, .card-hover {
     @apply rounded-xl border border-line bg-card;
     box-shadow: 0 1px 2px rgba(16, 16, 16, 0.03);
@@ -120,7 +117,7 @@
     box-shadow: 0 22px 40px -28px rgba(16, 16, 16, 0.35);
   }
 
-  /* --- Form fields --- */
+  /* Form fields */
   .label {
     @apply mb-1.5 block text-[13px] font-medium text-muted;
   }
@@ -133,7 +130,7 @@
     @apply appearance-none bg-paper;
   }
 
-  /* --- Badges --- */
+  /* Badges */
   .badge {
     @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-paper-2
            px-2.5 py-1 text-[11px] font-semibold tracking-wide text-muted;
@@ -164,7 +161,7 @@
   }
 }
 
-/* ---------- Motion ---------- */
+/* Motion */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: none; }

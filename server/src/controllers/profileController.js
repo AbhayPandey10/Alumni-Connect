@@ -5,11 +5,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import ReferralRequest from '../models/ReferralRequest.js';
 import CareerRoadmap from '../models/CareerRoadmap.js';
-import User from '../models/User.js'; // Added to keep graduation year in sync
+import User from '../models/User.js';
 import { computeAlumniPoints } from '../services/contributionService.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url)); // server/src/controllers
-const SERVER_ROOT = path.join(__dirname, '../..'); // server/
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SERVER_ROOT = path.join(__dirname, '../..');
 const RESUME_DIR = path.join(SERVER_ROOT, 'uploads/resumes');
 
 const escapeRegex = (s = '') => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -17,7 +17,6 @@ const SUCCESS_STATUSES = ['Referred', 'Interviewing', 'Hired'];
 
 export const getStudentProfile = async (req, res) => {
   try {
-    // Updated populate to fetch the new first and last names
     const profile = await StudentProfile.findOne({ user: req.params.userId }).populate('user', 'firstName lastName username email');
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
     res.status(200).json(profile);
@@ -31,13 +30,12 @@ export const updateStudentProfile = async (req, res) => {
     const { university, graduationYear, major, skills, githubUrl, portfolioUrl, projects, resumeUrl } = req.body;
     const userId = req.user.id || req.user._id;
 
-    // Update main user account's graduation year if it changed
     if (graduationYear) {
       await User.findByIdAndUpdate(userId, { graduationYear });
     }
-    
+
     let profile = await StudentProfile.findOne({ user: userId });
-    
+
     if (profile) {
       profile.university = university || profile.university;
       profile.graduationYear = graduationYear || profile.graduationYear;
@@ -47,7 +45,7 @@ export const updateStudentProfile = async (req, res) => {
       profile.portfolioUrl = portfolioUrl || profile.portfolioUrl;
       profile.projects = projects || profile.projects;
       profile.resumeUrl = resumeUrl || profile.resumeUrl;
-      
+
       const updatedProfile = await profile.save();
       return res.status(200).json(updatedProfile);
     }
@@ -71,8 +69,6 @@ export const updateStudentProfile = async (req, res) => {
   }
 };
 
-// @desc  Upload / replace the logged-in student's resume PDF
-// @route POST /api/profiles/student/resume
 export const uploadResume = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Please upload a PDF resume' });
@@ -83,7 +79,6 @@ export const uploadResume = async (req, res) => {
     await fs.promises.writeFile(path.join(RESUME_DIR, filename), req.file.buffer);
     const resumeUrl = `/uploads/resumes/${filename}`;
 
-    // Persist on the profile if it exists; best-effort remove the previous file
     const profile = await StudentProfile.findOne({ user: userId });
     if (profile) {
       if (profile.resumeUrl) {
@@ -99,8 +94,6 @@ export const uploadResume = async (req, res) => {
   }
 };
 
-// @desc  Remove the logged-in student's resume
-// @route DELETE /api/profiles/student/resume
 export const deleteResume = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
@@ -118,11 +111,10 @@ export const deleteResume = async (req, res) => {
 
 export const getAlumniProfile = async (req, res) => {
   try {
-    // Updated populate to fetch the new first and last names
     const profile = await AlumniProfile.findOne({ user: req.params.userId }).populate('user', 'firstName lastName username email');
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
 
-    // Keep contribution points accurate (compute fresh + self-heal the stored value)
+    // Recompute contribution points fresh and self-heal the stored value
     const { points } = await computeAlumniPoints(req.params.userId);
     if (points !== profile.contributionPoints) {
       profile.contributionPoints = points;
@@ -137,17 +129,15 @@ export const getAlumniProfile = async (req, res) => {
 
 export const updateAlumniProfile = async (req, res) => {
   try {
-    // Added college, department, and graduationYear to the destructuring
     const { college, department, graduationYear, currentCompany, jobTitle, industry, yearsOfExperience, skills, linkedinUrl } = req.body;
     const userId = req.user.id || req.user._id;
 
-    // Update main user account's graduation year if it changed
     if (graduationYear) {
       await User.findByIdAndUpdate(userId, { graduationYear });
     }
-    
+
     let profile = await AlumniProfile.findOne({ user: userId });
-    
+
     if (profile) {
       profile.college = college || profile.college;
       profile.department = department || profile.department;
@@ -181,14 +171,8 @@ export const updateAlumniProfile = async (req, res) => {
   }
 };
 
-
-// @desc  Recommend alumni a student should reach out to (intelligent matching)
-// @route GET /api/profiles/alumni/recommended
-//
-// Scores alumni for the requesting student on: shared skills, referral success
-// rate, responsiveness, and — if the student has generated a career roadmap —
-// whether the alumnus works at their target company. Returns the top matches
-// with human-readable reasons.
+// Recommends alumni for a student, scored on shared skills, referral success,
+// responsiveness, and (if they have a roadmap) target-company match.
 export const getRecommendedAlumni = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
@@ -253,18 +237,12 @@ export const getRecommendedAlumni = async (req, res) => {
   }
 };
 
-// @desc    Search, rank, and paginate Alumni profiles
-// @route   GET /api/profiles/alumni
-//
-// Ranking blends: skill similarity (to the searching student's skills, or an
-// explicit `skills` query), referral success rate, responsiveness, and — when a
-// company is searched — company relevance. The whole filtered set is ranked
-// before pagination so ordering is global, not per-page.
+// Ranks the whole filtered set before paginating so ordering is global.
 export const searchAlumniProfiles = async (req, res) => {
   try {
     const { username, company, role, industry, department, graduationYear, skills, page = 1, limit = 9 } = req.query;
 
-    // 1. Start from ALL alumni users (so alumni without a profile still appear)
+    // Start from all alumni users so those without a profile still appear
     const userQuery = { role: 'Alumni' };
     if (username) userQuery.username = { $regex: escapeRegex(username), $options: 'i' };
     if (graduationYear) userQuery.graduationYear = Number(graduationYear);
@@ -277,11 +255,9 @@ export const searchAlumniProfiles = async (req, res) => {
     }
     const userIds = alumniUsers.map((u) => u._id);
 
-    // 2. Left-join their profiles
     const profiles = await AlumniProfile.find({ user: { $in: userIds } }).lean();
     const profByUser = new Map(profiles.map((p) => [String(p.user), p]));
 
-    // 3. Profile-level filters exclude alumni who don't (yet) match
     const rx = (v) => new RegExp(escapeRegex(v), 'i');
     const hasProfileFilter = !!(company || role || industry || department);
     let records = alumniUsers
@@ -296,14 +272,13 @@ export const searchAlumniProfiles = async (req, res) => {
         return true;
       });
 
-    // 4. Referral success per alumnus
     const refStats = await ReferralRequest.aggregate([
       { $match: { alumni: { $in: userIds } } },
       { $group: { _id: '$alumni', total: { $sum: 1 }, success: { $sum: { $cond: [{ $in: ['$status', SUCCESS_STATUSES] }, 1, 0] } } } },
     ]);
     const refMap = new Map(refStats.map((r) => [String(r._id), r]));
 
-    // 5. Skill-similarity basis: explicit `skills` query, else the requesting student's own skills
+    // Skill basis: explicit query, else the requesting student's own skills
     let querySkills = skills ? skills.split(',').map((s) => s.toLowerCase().trim()).filter(Boolean) : [];
     if (!querySkills.length) {
       const me = await StudentProfile.findOne({ user: req.user.id || req.user._id }).select('skills');
@@ -312,7 +287,6 @@ export const searchAlumniProfiles = async (req, res) => {
     const companyQ = company ? company.toLowerCase().trim() : '';
     const W = { skill: 0.35, success: 0.30, responsiveness: 0.20, company: 0.15 };
 
-    // 6. Rank (profileless alumni score low and sort to the bottom)
     const ranked = records.map(({ user, profile }) => {
       const p = profile || {};
       const aSkills = (p.skills || []).map((s) => s.toLowerCase());
@@ -331,7 +305,7 @@ export const searchAlumniProfiles = async (req, res) => {
       let score = (querySkills.length || companyQ)
         ? W.skill * skillSim + W.success * successRate + W.responsiveness * responsiveness + W.company * companyRel
         : 0.6 * successRate + 0.4 * responsiveness;
-      if (!profile) score -= 0.5; // nudge incomplete profiles below completed ones
+      if (!profile) score -= 0.5; // push incomplete profiles down
 
       return {
         ...p,
@@ -363,8 +337,6 @@ export const searchAlumniProfiles = async (req, res) => {
   }
 };
 
-// @desc  Public read-only profile of any user (for viewing each other)
-// @route GET /api/profiles/view/:userId
 export const getPublicProfile = async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)

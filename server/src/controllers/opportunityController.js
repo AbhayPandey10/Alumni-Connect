@@ -6,23 +6,10 @@ import User from '../models/User.js';
 import { createNotification } from '../services/notificationService.js';
 import { recomputeContribution } from '../services/contributionService.js';
 
-// Escape user input before using it inside a RegExp
 const escapeRegex = (str = '') => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const norm = (s = '') => s.toLowerCase().trim();
 
-/*
- * Referral priority ranking.
- *
- * When several alumni post the same opening, we surface the strongest referrer
- * first. Each posting gets a priorityScore (0-100) blending the poster's:
- *   - seniority         (AlumniProfile.yearsOfExperience)
- *   - contribution      (opportunities they've posted + referrals given)
- *   - referralSuccess   (share of their referral requests that reached
- *                        Referred / Interviewing / Hired)
- * Identical openings (same role + company) are then clustered together and
- * ordered by that score, and the board as a whole leads with the highest
- * priority openings.
- */
+// Rank identical openings by the poster's seniority, contribution, and referral success.
 const PRIORITY_WEIGHTS = { seniority: 0.34, contribution: 0.33, success: 0.33 };
 const SUCCESS_STATUSES = ['Referred', 'Interviewing', 'Hired'];
 
@@ -64,7 +51,6 @@ const buildPriorityIndex = async (posterIds) => {
     const hasReferralHistory = ref && ref.total > 0;
     const successRate = hasReferralHistory ? ref.success / ref.total : 0.5; // neutral baseline
 
-    // Normalise each component to 0..1 with sensible caps
     const seniorityN = Math.min(years, 20) / 20;
     const contributionN = Math.min(contribution, 15) / 15;
     const successN = successRate;
@@ -85,9 +71,7 @@ const buildPriorityIndex = async (posterIds) => {
   return index;
 };
 
-// Attach poster priority signals to a list of plain opportunity objects,
-// preserving their existing order (used where a custom order already applies,
-// e.g. skill-based recommendations).
+// Attach poster priority signals without changing the list's order.
 const attachPosterSignals = async (items) => {
   const posterIds = [...new Map(
     items.map((o) => o.postedBy?._id || o.postedBy).filter(Boolean).map((id) => [String(id), id])
@@ -100,9 +84,8 @@ const attachPosterSignals = async (items) => {
   });
 };
 
-// Attach priority signals, cluster identical openings, and order the board.
 const prioritizeOpportunities = async (opportunities) => {
-  // Unique poster ObjectIds (aggregation $match needs ObjectIds, not strings)
+  // Aggregation $match needs ObjectIds, not strings
   const posterIds = [...new Map(
     opportunities
       .map((o) => o.postedBy?._id || o.postedBy)
@@ -117,7 +100,6 @@ const prioritizeOpportunities = async (opportunities) => {
     return { ...o.toObject(), priorityScore: signals.priorityScore, poster: signals };
   });
 
-  // Group identical openings (role + company)
   const groups = new Map();
   for (const o of enriched) {
     const key = `${norm(o.role)}|${norm(o.company)}`;
@@ -134,7 +116,6 @@ const prioritizeOpportunities = async (opportunities) => {
     });
   }
 
-  // Lead with the highest-priority openings; keep each identical group together
   return [...groups.values()]
     .sort((ga, gb) => gb[0].priorityScore - ga[0].priorityScore || new Date(gb[0].createdAt) - new Date(ga[0].createdAt))
     .flat();
@@ -144,24 +125,20 @@ export const createOpportunity = async (req, res) => {
   try {
     const alumniId = req.user.id || req.user._id;
 
-    // 1. Save the new job to the database
     const newOpportunity = await Opportunity.create({
       ...req.body,
       postedBy: alumniId
     });
 
-    // 2. Respond to the frontend immediately (Don't make the user wait for notifications to process)
+    // Respond before running notifications in the background
     res.status(201).json(newOpportunity);
 
-    // Award contribution points for posting (background)
     recomputeContribution(alumniId);
 
-    // 3. Process notifications in the background
     try {
-      // Find all users with the student role (Check if your DB uses 'student' or 'Student')
-      const students = await User.find({ role: { $regex: /^student$/i } }); 
-      
-      const notificationPromises = students.map(student => 
+      const students = await User.find({ role: { $regex: /^student$/i } });
+
+      const notificationPromises = students.map(student =>
         createNotification({
           recipient: student._id,
           type: 'New_Opportunity',
@@ -174,11 +151,9 @@ export const createOpportunity = async (req, res) => {
         })
       );
 
-      // Execute all notification creations in parallel
       await Promise.all(notificationPromises);
-      
     } catch (notificationError) {
-      // Log the error but don't crash the original request since the job was already saved
+      // Job already saved; don't fail the request on notification errors
       console.error('Background notification failed:', notificationError);
     }
 
@@ -199,7 +174,6 @@ export const getOpportunities = async (req, res) => {
     if (role) filter.role = { $regex: escapeRegex(role), $options: 'i' };
     if (eligibility) filter.eligibility = { $regex: escapeRegex(eligibility), $options: 'i' };
 
-    // Skills filter — match any of the requested skills (case-insensitive, partial)
     if (skills) {
       const list = skills.split(',').map((s) => s.trim()).filter(Boolean);
       if (list.length) {
@@ -207,7 +181,6 @@ export const getOpportunities = async (req, res) => {
       }
     }
 
-    // Free-text search across the main fields
     if (search) {
       const rx = new RegExp(escapeRegex(search), 'i');
       filter.$or = [
@@ -221,7 +194,6 @@ export const getOpportunities = async (req, res) => {
     const opportunities = await Opportunity.find(filter)
       .populate('postedBy', 'firstName lastName username email');
 
-    // Order by referrer priority, clustering identical openings together
     const prioritized = await prioritizeOpportunities(opportunities);
 
     res.status(200).json(prioritized);
@@ -231,8 +203,7 @@ export const getOpportunities = async (req, res) => {
 };
 
 
-// Recommend active opportunities that overlap with a student's skill set,
-// ranked by how many of their skills match.
+// Active opportunities that overlap with the student's skills, ranked by match count.
 export const getRecommendedOpportunities = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
@@ -241,7 +212,6 @@ export const getRecommendedOpportunities = async (req, res) => {
     const studentSkills = (profile?.skills || []).map(norm).filter(Boolean);
 
     if (!studentSkills.length) {
-      // No skills on file — nothing to base recommendations on yet.
       return res.status(200).json({ hasSkills: false, opportunities: [] });
     }
 
@@ -264,7 +234,6 @@ export const getRecommendedOpportunities = async (req, res) => {
       .sort((a, b) => b.matchCount - a.matchCount || b.matchScore - a.matchScore)
       .slice(0, 6);
 
-    // Attach referrer standing so recommended cards show the poster too
     const withPoster = await attachPosterSignals(scored);
 
     res.status(200).json({ hasSkills: true, opportunities: withPoster });
@@ -277,13 +246,13 @@ export const getRecommendedOpportunities = async (req, res) => {
 export const updateOpportunity = async (req, res) => {
   try {
     const opportunity = await Opportunity.findById(req.params.id);
-    
+
     if (!opportunity) {
       return res.status(404).json({ message: 'Opportunity not found' });
     }
 
     const authorId = opportunity.postedBy._id ? opportunity.postedBy._id.toString() : opportunity.postedBy.toString();
-    
+
     const requestingUserId = req.user.id || req.user._id;
 
     if (authorId !== requestingUserId.toString()) {
@@ -304,7 +273,6 @@ export const updateOpportunity = async (req, res) => {
 };
 
 
-// Opportunities posted by the logged-in alumnus (incl. hidden), with request counts
 export const getMyOpportunities = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
@@ -320,7 +288,6 @@ const isOwner = (opportunity, req) => {
   return authorId === (req.user.id || req.user._id).toString();
 };
 
-// Toggle a posting between active and hidden (owner only)
 export const setOpportunityActive = async (req, res) => {
   try {
     const opportunity = await Opportunity.findById(req.params.id);
@@ -335,7 +302,6 @@ export const setOpportunityActive = async (req, res) => {
   }
 };
 
-// Delete a posting (owner only) + its referral requests
 export const deleteMyOpportunity = async (req, res) => {
   try {
     const opportunity = await Opportunity.findById(req.params.id);
@@ -355,7 +321,7 @@ export const requestReferral = async (req, res) => {
   try {
     const { message } = req.body;
     const opportunity = await Opportunity.findById(req.params.id);
-    
+
     if (!opportunity) {
       return res.status(404).json({ message: 'Opportunity not found' });
     }
@@ -369,8 +335,7 @@ export const requestReferral = async (req, res) => {
     opportunity.requestedBy.push(userId);
     await opportunity.save();
 
-    // Create a trackable referral request. This is what feeds the alumni inbox
-    // and the referral-success-rate signal used for priority ranking.
+    // Trackable request that feeds the alumni inbox and the success-rate signal
     let referral;
     try {
       referral = await ReferralRequest.create({
@@ -386,7 +351,6 @@ export const requestReferral = async (req, res) => {
 
     res.status(200).json({ message: 'Referral requested successfully!', opportunity });
 
-    // Notify the posting alumnus (background — don't block the response)
     if (referral) {
       createNotification({
         recipient: opportunity.postedBy,

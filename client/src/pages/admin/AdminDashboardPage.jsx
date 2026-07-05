@@ -128,7 +128,7 @@ const AdminDashboardPage = () => {
         <div className="flex justify-center py-24"><Loader2 className="animate-spin text-ink" size={28} /></div>
       ) : (
         <div className="mt-8">
-          {/* ---------------- OVERVIEW ---------------- */}
+          {/* OVERVIEW */}
           {tab === 'overview' && overview && (
             <div className="space-y-8">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
@@ -186,7 +186,7 @@ const AdminDashboardPage = () => {
             </div>
           )}
 
-          {/* ---------------- USERS ---------------- */}
+          {/* USERS */}
           {tab === 'users' && (
             <div>
               <form
@@ -264,7 +264,7 @@ const AdminDashboardPage = () => {
             </div>
           )}
 
-          {/* ---------------- MODERATION ---------------- */}
+          {/* MODERATION */}
           {tab === 'moderation' && (
             <div className="space-y-3">
               {opps.length === 0 ? (

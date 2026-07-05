@@ -6,7 +6,6 @@ import { recomputeContribution } from '../services/contributionService.js';
 const SUCCESS_STATUSES = ['Referred', 'Interviewing', 'Hired'];
 
 export const requestReferral = async (req, res) => {
-  // Security Rule: Only Students can request
   if (req.user.role !== 'Student') {
     return res.status(403).json({ message: 'Only students can request referrals' });
   }
@@ -29,8 +28,6 @@ export const requestReferral = async (req, res) => {
   }
 };
 
-// Referral requests received by the logged-in alumnus (inbox), with the
-// alumnus's own aggregate success stats.
 export const getReceivedReferrals = async (req, res) => {
   try {
     const alumniId = req.user.id || req.user._id;
@@ -51,7 +48,6 @@ export const getReceivedReferrals = async (req, res) => {
   }
 };
 
-// Referral requests sent by the logged-in student (their "My Requests" view).
 export const getSentReferrals = async (req, res) => {
   try {
     const studentId = req.user.id || req.user._id;
@@ -74,7 +70,6 @@ export const updateReferralStatus = async (req, res) => {
     const referral = await ReferralRequest.findById(req.params.id);
     if (!referral) return res.status(404).json({ message: 'Request not found' });
 
-    // Security Rule: Ensure only the assigned alumni can update it
     if (referral.alumni.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Unauthorized access to referral' });
     }
@@ -95,12 +90,10 @@ export const updateReferralStatus = async (req, res) => {
       );
     }
 
-    // Recompute contribution points for the new referral status (background)
     recomputeContribution(req.user.id);
 
     res.status(200).json(referral);
 
-    // Notify the student that their request moved (background)
     createNotification({
       recipient: referral.student,
       type: 'Referral_Update',

@@ -14,14 +14,11 @@ export const generateRoadmap = async (req, res) => {
       return res.status(400).json({ message: 'A target role is required' });
     }
 
-    // Fetch student's current skills
     const profile = await StudentProfile.findOne({ user: req.user.id });
     const currentSkills = profile ? profile.skills : [];
 
-    // Generate Roadmap using Gemini
     const roadmapData = await generateCareerRoadmapWithAI(currentSkills, targetRole, targetCompany);
 
-    // Save to Database
     const newRoadmap = await CareerRoadmap.create({
       student: req.user.id,
       targetRole,
@@ -34,7 +31,6 @@ export const generateRoadmap = async (req, res) => {
       timeline: roadmapData.timeline
     });
 
-    // Link roadmap to profile
     if (profile) {
       profile.careerRoadmapRef = newRoadmap._id;
       await profile.save();

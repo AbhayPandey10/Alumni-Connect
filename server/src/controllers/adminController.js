@@ -8,7 +8,7 @@ import Notification from '../models/Notification.js';
 const escapeRegex = (s = '') => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const ROLES = ['Student', 'Alumni', 'Admin'];
 
-// ---- Platform activity overview ----
+// Platform activity overview
 export const getOverview = async (req, res) => {
   try {
     const [students, alumni, admins, jobsTotal, jobsActive, refsTotal, refByStatus, recentUsers, recentOpps, recentRefs] = await Promise.all([
@@ -36,7 +36,7 @@ export const getOverview = async (req, res) => {
   }
 };
 
-// ---- User management ----
+// User management
 export const getUsers = async (req, res) => {
   try {
     const { search, role, page = 1, limit = 15 } = req.query;
@@ -99,7 +99,7 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-// ---- Content moderation (opportunities) ----
+// Content moderation (opportunities)
 export const getOpportunitiesAdmin = async (req, res) => {
   try {
     const { search } = req.query;

@@ -1,7 +1,3 @@
-// Lightweight, dependency-free, monochrome charts that match the editorial
-// design system (ink on paper, no gradients). Values are always shown as text
-// so the charts stay accessible.
-
 const Empty = ({ label = 'No data yet' }) => (
   <p className="py-6 text-center font-serif text-sm italic text-muted">{label}</p>
 );
@@ -27,7 +23,6 @@ export const Stat = ({ label, value, sub }) => (
   </div>
 );
 
-// Horizontal labelled bars (also reads well as a funnel when data descends)
 export const BarList = ({ data, suffix = '', empty }) => {
   if (!data?.length) return <Empty label={empty} />;
   const max = Math.max(...data.map((d) => d.value || 0), 1);

@@ -5,7 +5,6 @@ import { createNotification } from '../services/notificationService.js';
 const nameOf = (u) => (u?.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : (u?.username || 'Someone'));
 const meId = (req) => String(req.user.id || req.user._id);
 
-// POST /api/connections/request  { recipientId }
 export const sendConnectionRequest = async (req, res) => {
   try {
     const me = meId(req);
@@ -49,7 +48,6 @@ export const sendConnectionRequest = async (req, res) => {
   }
 };
 
-// PUT /api/connections/:id/respond  { action: 'accept' | 'reject' }
 export const respondToRequest = async (req, res) => {
   try {
     const me = meId(req);
@@ -80,7 +78,6 @@ export const respondToRequest = async (req, res) => {
   }
 };
 
-// GET /api/connections  — my accepted connections
 export const getMyConnections = async (req, res) => {
   try {
     const me = meId(req);
@@ -98,7 +95,6 @@ export const getMyConnections = async (req, res) => {
   }
 };
 
-// GET /api/connections/pending — incoming requests awaiting my response
 export const getPendingRequests = async (req, res) => {
   try {
     const me = meId(req);
@@ -111,7 +107,6 @@ export const getPendingRequests = async (req, res) => {
   }
 };
 
-// GET /api/connections/status/:userId — relationship between me and another user
 export const getConnectionStatus = async (req, res) => {
   try {
     const me = meId(req);
@@ -123,7 +118,6 @@ export const getConnectionStatus = async (req, res) => {
     });
     if (!conn || conn.status === 'rejected') return res.status(200).json({ status: 'none' });
     if (conn.status === 'accepted') return res.status(200).json({ status: 'connected', connectionId: conn._id });
-    // pending
     return res.status(200).json({
       status: String(conn.requester) === me ? 'pending_outgoing' : 'pending_incoming',
       connectionId: conn._id,
@@ -133,7 +127,6 @@ export const getConnectionStatus = async (req, res) => {
   }
 };
 
-// DELETE /api/connections/:id — remove a connection or withdraw a request (either party)
 export const removeConnection = async (req, res) => {
   try {
     const me = meId(req);

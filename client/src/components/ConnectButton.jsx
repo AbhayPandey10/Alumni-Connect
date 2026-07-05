@@ -4,7 +4,7 @@ import { UserPlus, Check, Clock, Loader2 } from 'lucide-react';
 
 // Relationship-aware connect control for a given user.
 const ConnectButton = ({ userId }) => {
-  const [status, setStatus] = useState(null); // self | none | pending_outgoing | pending_incoming | connected
+  const [status, setStatus] = useState(null); 
   const [connectionId, setConnectionId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);

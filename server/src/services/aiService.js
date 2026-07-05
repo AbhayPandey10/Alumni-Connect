@@ -7,9 +7,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Gemini occasionally returns transient errors (503 overloaded, 429 rate limit,
-// or 5xx). Retry those a few times with exponential backoff + jitter before
-// giving up. Non-transient errors (e.g. 400, 404) fail fast.
+// Retry transient errors (503/429/5xx) with backoff; fail fast on the rest.
 const isTransient = (err) => {
   const status = err?.status;
   return status === 503 || status === 429 || status === 500 || status === 502 || status === 504;
@@ -18,10 +16,7 @@ const isTransient = (err) => {
 // Primary model, then a lighter fallback tried when the primary stays overloaded.
 const MODEL_CHAIN = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
 
-// Try each model in the chain, retrying transient errors (503/429/5xx) with
-// exponential backoff before moving on to the next model. Non-transient errors
-// (e.g. 400/404) fail fast without wasting fallbacks. `modelOptions` carries the
-// per-call generationConfig; this helper supplies the model name.
+// Retry each model with backoff, then fall back to the next in the chain.
 const generateWithFallback = async (
   modelOptions,
   prompt,
@@ -180,7 +175,6 @@ export const generateCareerRoadmapWithAI = async (currentSkills = [], targetRole
 };
 
 
-// Generate a role/company-tailored interview prep pack for a student.
 export const generateInterviewPrepWithAI = async ({ targetRole, targetCompany = 'Any', skills = [], experienceLevel = 'Entry-level' }) => {
   const modelOptions = { generationConfig: { responseMimeType: 'application/json', temperature: 0.5 } };
 

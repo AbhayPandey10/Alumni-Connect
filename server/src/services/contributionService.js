@@ -23,7 +23,6 @@ export const tierFor = (points) => {
 const referralPointsFromStatuses = (statuses = []) =>
   statuses.reduce((sum, s) => sum + (POINTS.STATUS_TIER[s] || 0), 0);
 
-// Points for a single alumnus (used to keep their stored total current)
 export const computeAlumniPoints = async (userId) => {
   const [posts, refs] = await Promise.all([
     Opportunity.countDocuments({ postedBy: userId }),
@@ -33,7 +32,6 @@ export const computeAlumniPoints = async (userId) => {
   return { points: posts * POINTS.POST + referralPoints, posts, referralPoints, referrals: refs.length };
 };
 
-// Recompute + persist an alumnus's contributionPoints (fire-and-forget safe)
 export const recomputeContribution = async (userId) => {
   try {
     const { points } = await computeAlumniPoints(userId);
