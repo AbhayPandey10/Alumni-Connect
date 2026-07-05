@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+// Uses the deployed API in production (set VITE_API_URL on the host),
+// falls back to the local server for development.
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:5000/api', 
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
 });
 
 // Automatically attach the token to every request
