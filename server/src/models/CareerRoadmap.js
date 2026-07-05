@@ -8,8 +8,32 @@ const roadmapSchema = new mongoose.Schema({
   },
   targetRole: { type: String, required: true },
   targetCompany: { type: String },
-  skillsToAcquire: [{ type: String }],
-  certifications: [{ type: String }],
+
+  summary: { type: String },
+
+  skillsToAcquire: [{
+    skill: { type: String },
+    reason: { type: String },
+    priority: { type: String } // High | Medium | Low
+  }],
+
+  certifications: [{
+    name: { type: String },
+    provider: { type: String }
+  }],
+
+  learningResources: [{
+    title: { type: String },
+    type: { type: String }, // Course | Book | Documentation | Video | Practice
+    provider: { type: String }
+  }],
+
+  projectSuggestions: [{
+    title: { type: String },
+    description: { type: String },
+    skills: [{ type: String }]
+  }],
+
   timeline: [{
     phase: String,
     focus: String,

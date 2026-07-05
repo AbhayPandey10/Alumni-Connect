@@ -13,19 +13,22 @@ const referralRequestSchema = new mongoose.Schema({
   },
   opportunity: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Opportunity'
+    ref: 'Opportunity',
+    required: true
   },
   message: { type: String, required: true },
-  resumeUrl: { type: String, required: true },
+  resumeUrl: { type: String },
+  
   status: {
     type: String,
-    enum: ['Pending', 'Reviewed', 'Referred', 'Rejected'],
+    enum: ['Pending', 'Reviewed', 'Referred', 'Interviewing', 'Hired', 'Rejected'],
     default: 'Pending'
   },
+  
   statusHistory: [{
     status: { type: String },
-    timestamp: { type: Date, default: Date.now },
-    note: { type: String } 
+    note: { type: String },
+    updatedAt: { type: Date, default: Date.now }
   }]
 }, { timestamps: true });
 

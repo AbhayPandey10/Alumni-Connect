@@ -1,24 +1,24 @@
 import { useState } from 'react';
 import axiosInstance from '../../api/axiosInstance';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
 const EditOpportunityPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const existingJob = location.state?.opp; 
+  const existingJob = location.state?.opp;
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  // Pre-fill state with existing job data
   const [formData, setFormData] = useState({
     company: existingJob?.company || '',
     role: existingJob?.role || '',
     type: existingJob?.type || 'Full-Time',
     eligibility: existingJob?.eligibility || '',
-    requiredSkills: existingJob?.requiredSkills?.join(', ') || '', // Convert array back to string
+    requiredSkills: existingJob?.requiredSkills?.join(', ') || '',
     deadline: existingJob?.deadline ? new Date(existingJob.deadline).toISOString().split('T')[0] : '',
-    applicationLink: existingJob?.applicationLink || ''
+    applicationLink: existingJob?.applicationLink || '',
+    salary: existingJob?.salary ?? '',
   });
 
   if (!existingJob) {
@@ -30,15 +30,14 @@ const EditOpportunityPage = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
     try {
       const payload = {
         ...formData,
-        requiredSkills: formData.requiredSkills.split(',').map(skill => skill.trim())
+        requiredSkills: formData.requiredSkills.split(',').map((s) => s.trim()),
+        salary: formData.salary ? Number(formData.salary) : undefined,
       };
-
       await axiosInstance.put(`/opportunities/${existingJob._id}`, payload);
-      navigate('/jobs'); 
+      navigate('/jobs');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update opportunity');
     } finally {
@@ -47,56 +46,71 @@ const EditOpportunityPage = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 p-8 bg-white rounded-lg shadow-sm border border-gray-200">
-      <h2 className="text-3xl font-bold text-gray-900 mb-6">Edit Opportunity</h2>
-      
-      {error && <div className="bg-red-100 text-red-600 p-3 rounded mb-6">{error}</div>}
-      
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="shell max-w-3xl py-14">
+      <Link to="/jobs" className="btn-ghost mb-6 -ml-3">
+        <ArrowLeft size={15} /> Back to board
+      </Link>
+
+      <header className="animate-fade-up border-b border-line pb-8">
+        <div className="eyebrow"><span className="h-1 w-1 rounded-full bg-ink" /> Edit posting</div>
+        <h1 className="display mt-5 text-4xl md:text-5xl">Edit opportunity</h1>
+      </header>
+
+      {error && (
+        <div className="mt-6 rounded-lg border border-line bg-paper-2 px-4 py-3 text-sm text-text">{error}</div>
+      )}
+
+      <form onSubmit={handleSubmit} className="animate-fade-up mt-8 card space-y-6 p-8">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
-            <input type="text" required className="w-full px-3 py-2 border rounded-md" value={formData.company} onChange={(e) => setFormData({ ...formData, company: e.target.value })} />
+            <label className="label">Company</label>
+            <input type="text" required className="field" value={formData.company} onChange={(e) => setFormData({ ...formData, company: e.target.value })} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Job Role</label>
-            <input type="text" required className="w-full px-3 py-2 border rounded-md" value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} />
+            <label className="label">Job role</label>
+            <input type="text" required className="field" value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Opportunity Type</label>
-            <select className="w-full px-3 py-2 border rounded-md" value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })}>
+            <label className="label">Opportunity type</label>
+            <select className="field" value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })}>
               <option value="Full-Time">Full-Time</option>
               <option value="Internship">Internship</option>
               <option value="Contract">Contract</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Eligibility</label>
-            <input type="text" required className="w-full px-3 py-2 border rounded-md" value={formData.eligibility} onChange={(e) => setFormData({ ...formData, eligibility: e.target.value })} />
+            <label className="label">Eligibility</label>
+            <input type="text" required className="field" value={formData.eligibility} onChange={(e) => setFormData({ ...formData, eligibility: e.target.value })} />
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Required Skills (Comma separated)</label>
-          <input type="text" required className="w-full px-3 py-2 border rounded-md" value={formData.requiredSkills} onChange={(e) => setFormData({ ...formData, requiredSkills: e.target.value })} />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-[2fr_1fr]">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Application Deadline</label>
-            <input type="date" required className="w-full px-3 py-2 border rounded-md" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} />
+            <label className="label">Required skills (comma separated)</label>
+            <input type="text" required className="field" value={formData.requiredSkills} onChange={(e) => setFormData({ ...formData, requiredSkills: e.target.value })} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Official Application Link</label>
-            <input type="url" required className="w-full px-3 py-2 border rounded-md" value={formData.applicationLink} onChange={(e) => setFormData({ ...formData, applicationLink: e.target.value })} />
+            <label className="label">Annual CTC in LPA <span className="text-muted">(optional)</span></label>
+            <input type="number" min="0" step="0.5" className="field" value={formData.salary} onChange={(e) => setFormData({ ...formData, salary: e.target.value })} />
           </div>
         </div>
 
-        <button type="submit" disabled={loading} className="w-full py-3 bg-blue-600 text-white rounded-md font-bold hover:bg-blue-700">
-          {loading ? 'Saving Changes...' : 'Save Changes'}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div>
+            <label className="label">Application deadline</label>
+            <input type="date" required className="field" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">Official application link</label>
+            <input type="url" required className="field" value={formData.applicationLink} onChange={(e) => setFormData({ ...formData, applicationLink: e.target.value })} />
+          </div>
+        </div>
+
+        <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+          {loading ? 'Saving changes…' : 'Save changes'}
         </button>
       </form>
     </div>

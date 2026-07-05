@@ -1,6 +1,6 @@
 import CareerRoadmap from '../models/CareerRoadmap.js';
 import StudentProfile from '../models/StudentProfile.js';
-import { generateCareerRoadmapWithAI } from '../services/aiService.js';
+import { generateCareerRoadmapWithAI, generateInterviewPrepWithAI } from '../services/aiService.js';
 
 export const generateRoadmap = async (req, res) => {
   try {
@@ -9,7 +9,11 @@ export const generateRoadmap = async (req, res) => {
     }
 
     const { targetRole, targetCompany } = req.body;
-    
+
+    if (!targetRole || !targetRole.trim()) {
+      return res.status(400).json({ message: 'A target role is required' });
+    }
+
     // Fetch student's current skills
     const profile = await StudentProfile.findOne({ user: req.user.id });
     const currentSkills = profile ? profile.skills : [];
@@ -22,8 +26,11 @@ export const generateRoadmap = async (req, res) => {
       student: req.user.id,
       targetRole,
       targetCompany,
+      summary: roadmapData.summary,
       skillsToAcquire: roadmapData.skillsToAcquire,
       certifications: roadmapData.certifications,
+      learningResources: roadmapData.learningResources,
+      projectSuggestions: roadmapData.projectSuggestions,
       timeline: roadmapData.timeline
     });
 
@@ -34,6 +41,33 @@ export const generateRoadmap = async (req, res) => {
     }
 
     res.status(201).json(newRoadmap);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const generateInterviewPrep = async (req, res) => {
+  try {
+    if (req.user.role !== 'Student') {
+      return res.status(403).json({ message: 'Only students can use interview prep' });
+    }
+
+    const { targetRole, targetCompany, experienceLevel } = req.body;
+    if (!targetRole || !targetRole.trim()) {
+      return res.status(400).json({ message: 'A target role is required' });
+    }
+
+    const profile = await StudentProfile.findOne({ user: req.user.id });
+    const skills = profile ? profile.skills : [];
+
+    const data = await generateInterviewPrepWithAI({
+      targetRole: targetRole.trim(),
+      targetCompany: targetCompany?.trim() || 'Any',
+      skills,
+      experienceLevel: experienceLevel || 'Entry-level',
+    });
+
+    res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

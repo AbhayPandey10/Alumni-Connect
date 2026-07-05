@@ -7,18 +7,20 @@ const studentProfileSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  department: { type: String, required: true },
+  university: { type: String, required: true },
   graduationYear: { type: Number, required: true },
+  major: { type: String, required: true },
   skills: [{ type: String }],
+  githubUrl: { type: String },
+  portfolioUrl: { type: String },
+  
   projects: [{
-    title: String,
-    description: String,
-    techStack: [String],
-    link: String
+    title: { type: String },
+    techStack: [{ type: String }],
+    description: { type: String },
+    link: { type: String }
   }],
-  resumeUrl: { type: String, default: '' },
-  atsScore: { type: Number, default: 0 },
-  careerRoadmapRef: { type: mongoose.Schema.Types.ObjectId, ref: 'CareerRoadmap' }
+  resumeUrl: { type: String } 
 }, { timestamps: true });
 
 export default mongoose.model('StudentProfile', studentProfileSchema);

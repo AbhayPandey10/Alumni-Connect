@@ -2,6 +2,20 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 
 const userSchema = new mongoose.Schema({
+  firstName: {
+    type: String,
+    required: true,
+  },
+  lastName: {
+    type: String,
+    required: true,
+  },
+  username: {
+    type: String,
+    required: true,
+    unique: true, 
+    trim: true,   
+  },
   email: {
     type: String,
     required: true,
@@ -21,10 +35,12 @@ const userSchema = new mongoose.Schema({
     type: Number, 
     required: true 
   },
-  isEmailVerified: { 
-    type: Boolean, 
-    default: false 
-  }
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  verificationCode: { type: String },
+  verificationExpires: { type: Date }
 }, { timestamps: true });
 
 userSchema.pre('save', async function() {

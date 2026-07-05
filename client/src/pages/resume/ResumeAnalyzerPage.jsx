@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axiosInstance from '../../api/axiosInstance';
-import { UploadCloud, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { UploadCloud, Loader2, CheckCircle2, AlertTriangle, FileText } from 'lucide-react';
 
 const ResumeAnalyzerPage = () => {
   const [file, setFile] = useState(null);
@@ -22,7 +22,6 @@ const ResumeAnalyzerPage = () => {
       setError('Please upload a PDF resume.');
       return;
     }
-    
     setLoading(true);
     setError('');
     setResults(null);
@@ -32,9 +31,8 @@ const ResumeAnalyzerPage = () => {
     formData.append('targetRole', targetRole);
 
     try {
-      // Set Content-Type to multipart/form-data for file uploads
       const { data } = await axiosInstance.post('/resume/analyze', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       setResults(data);
     } catch (err) {
@@ -45,92 +43,83 @@ const ResumeAnalyzerPage = () => {
     }
   };
 
+  const scoreColor = (s) => (s >= 80 ? 'var(--color-verify)' : s >= 60 ? 'var(--color-gold)' : 'var(--color-ink)');
+
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-4">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Resume Analyzer</h1>
-        <p className="text-gray-600 mb-8">Upload your resume and get an instant ATS score and feedback tailored to your target role.</p>
+    <div className="shell max-w-4xl py-14">
+      <header className="animate-fade-up border-b border-line pb-8">
+        <div className="eyebrow"><span className="h-1 w-1 rounded-full bg-ink" /> AI · Resume analysis</div>
+        <h1 className="display mt-5 text-4xl md:text-5xl">Resume analyzer</h1>
+        <p className="mt-3 max-w-lg text-sm text-muted">Upload your resume for an instant ATS score and tailored, role-specific feedback.</p>
+      </header>
 
-        <form onSubmit={handleAnalyze} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Target Job Role</label>
-            <input 
-              type="text" required
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g. Frontend Developer, Data Analyst"
-              value={targetRole}
-              onChange={(e) => setTargetRole(e.target.value)}
-            />
-          </div>
+      <form onSubmit={handleAnalyze} className="animate-fade-up mt-8 card space-y-6 p-8">
+        <div>
+          <label className="label">Target job role</label>
+          <input type="text" required className="field" placeholder="e.g. Frontend Developer, Data Analyst" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} />
+        </div>
 
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition">
-            <UploadCloud className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-            <label className="cursor-pointer text-blue-600 font-medium hover:underline">
-              <span>Browse for a PDF</span>
-              <input type="file" className="hidden" accept=".pdf" onChange={handleFileChange} />
-            </label>
-            <p className="text-sm text-gray-500 mt-1">
-              {file ? `Selected: ${file.name}` : 'or drag and drop your resume here'}
-            </p>
-          </div>
+        <label className="block cursor-pointer rounded-xl border border-dashed border-line-strong bg-paper-2 p-10 text-center transition-colors hover:border-ink">
+          <UploadCloud className="mx-auto mb-3 text-muted" size={34} strokeWidth={1.5} />
+          <span className="font-semibold text-ink underline underline-offset-4">Browse for a PDF</span>
+          <input type="file" className="hidden" accept=".pdf" onChange={handleFileChange} />
+          <p className="mt-2 flex items-center justify-center gap-1.5 text-sm text-muted">
+            {file ? <><FileText size={14} /> {file.name}</> : 'or drag and drop your resume here'}
+          </p>
+        </label>
 
-          {error && <div className="bg-red-100 text-red-600 p-3 rounded">{error}</div>}
+        {error && <div className="rounded-lg border border-line bg-paper-2 px-4 py-3 text-sm text-text">{error}</div>}
 
-          <button 
-            type="submit" 
-            disabled={loading || !file || !targetRole}
-            className={`w-full py-3 rounded-md text-white font-bold text-lg flex justify-center items-center transition ${
-              loading || !file || !targetRole ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-          >
-            {loading ? (
-              <><Loader2 className="animate-spin mr-2" size={20} /> Analyzing...</>
-            ) : (
-              'Analyze Resume'
-            )}
-          </button>
-        </form>
-      </div>
+        <button type="submit" disabled={loading || !file || !targetRole} className="btn-primary w-full disabled:opacity-40">
+          {loading ? <><Loader2 className="animate-spin" size={18} /> Analyzing…</> : 'Analyze resume'}
+        </button>
+      </form>
 
-      {/* RESULTS SECTION */}
       {results && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <div className="flex items-center justify-between border-b pb-6 mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Analysis Results</h2>
-            <div className={`text-4xl font-black ${results.atsScore >= 80 ? 'text-green-500' : results.atsScore >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>
-              {results.atsScore}/100
+        <div className="animate-fade-up mt-6 card p-8">
+          <div className="flex items-end justify-between border-b border-line pb-6">
+            <div>
+              <div className="eyebrow">ATS score</div>
+              <h2 className="display mt-2 text-2xl">Analysis results</h2>
+            </div>
+            <div className="text-right">
+              <span className="font-serif text-6xl font-medium tabular-nums" style={{ color: scoreColor(results.atsScore) }}>
+                {results.atsScore}
+              </span>
+              <span className="font-serif text-2xl text-muted">/100</span>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 flex items-center mb-2">
-                <AlertTriangle className="text-yellow-500 mr-2" size={20} /> Missing Keywords
+          <div className="mt-8 space-y-8">
+            <section>
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-muted">
+                <AlertTriangle size={15} /> Missing keywords
               </h3>
               <div className="flex flex-wrap gap-2">
                 {results.keywordOptimization?.map((keyword, i) => (
-                  <span key={i} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-                    {keyword}
-                  </span>
+                  <span key={i} className="badge">{keyword}</span>
                 ))}
               </div>
-            </div>
+            </section>
 
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Skill Gap Analysis</h3>
-              <p className="text-gray-700 bg-gray-50 p-4 rounded-md border">{results.skillGapAnalysis}</p>
-            </div>
+            <section className="border-t border-line pt-6">
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-muted">Skill gap analysis</h3>
+              <p className="rounded-lg border border-line bg-paper-2 p-4 text-sm leading-relaxed text-text">{results.skillGapAnalysis}</p>
+            </section>
 
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 flex items-center mb-2">
-                <CheckCircle className="text-green-500 mr-2" size={20} /> Actionable Improvements
+            <section className="border-t border-line pt-6">
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-muted">
+                <CheckCircle2 size={15} /> Actionable improvements
               </h3>
-              <ul className="list-disc pl-5 space-y-2 text-gray-700">
+              <ul className="space-y-3">
                 {results.improvementSuggestions?.map((tip, i) => (
-                  <li key={i}>{tip}</li>
+                  <li key={i} className="flex gap-3 text-sm leading-relaxed text-text">
+                    <span className="font-serif text-muted tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+                    {tip}
+                  </li>
                 ))}
               </ul>
-            </div>
+            </section>
           </div>
         </div>
       )}

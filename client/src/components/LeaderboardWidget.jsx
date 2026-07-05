@@ -1,18 +1,56 @@
 import { useState, useEffect } from 'react';
 import axiosInstance from '../api/axiosInstance';
-import { Trophy, Medal, Award } from 'lucide-react';
+import { Trophy } from 'lucide-react';
+
+const nameOf = (u) => (u?.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : (u?.username || u?.email?.split('@')[0] || 'Alumni'));
+const initialsOf = (u) => (`${u?.firstName?.[0] || ''}${u?.lastName?.[0] || ''}`.toUpperCase() || nameOf(u)[0]?.toUpperCase());
+
+const LeaderRow = ({ rank, user, points, tier, highlight = false, you = false }) => {
+  const isTop = rank === 1;
+  return (
+    <div
+      className={`flex items-center justify-between border-b border-line py-4 last:border-b-0 ${
+        highlight ? '-mx-3 rounded-lg border-b-0 bg-paper-2 px-3 ring-1 ring-line-strong' : ''
+      }`}
+    >
+      <div className="flex items-center gap-4">
+        <span
+          className="w-6 text-center font-serif text-lg tabular-nums"
+          style={{ color: isTop ? 'var(--color-gold)' : 'var(--color-muted)' }}
+        >
+          {rank ?? '—'}
+        </span>
+        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-paper-2 text-sm font-semibold uppercase text-ink">
+          {initialsOf(user)}
+        </div>
+        <div>
+          <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+            {nameOf(user)}
+            {you && <span className="badge">You</span>}
+          </p>
+          <p className="text-xs text-muted">
+            {user?.username ? `@${user.username} · ` : ''}{rank == null ? 'Unranked' : tier}
+          </p>
+        </div>
+      </div>
+      <span className={isTop ? 'badge-gold' : 'badge'}>{points} pts</span>
+    </div>
+  );
+};
 
 const LeaderboardWidget = () => {
   const [leaders, setLeaders] = useState([]);
+  const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
         const { data } = await axiosInstance.get('/leaderboard');
-        setLeaders(data);
+        setLeaders(data.leaders || []);
+        setMe(data.me || null);
       } catch (error) {
-        console.error("Failed to fetch leaderboard", error);
+        console.error('Failed to fetch leaderboard', error);
       } finally {
         setLoading(false);
       }
@@ -20,38 +58,59 @@ const LeaderboardWidget = () => {
     fetchLeaderboard();
   }, []);
 
-  if (loading) return <div className="animate-pulse h-32 bg-gray-200 rounded-xl mt-8"></div>;
+  if (loading) {
+    return (
+      <div className="mt-16">
+        <div className="card h-64 animate-pulse" />
+      </div>
+    );
+  }
+
+  const meId = me?.user?._id;
 
   return (
-    <div className="bg-gradient-to-br from-indigo-900 to-blue-800 rounded-xl shadow-lg p-6 mt-10 text-white">
-      <div className="flex items-center mb-6 border-b border-indigo-700 pb-4">
-        <Trophy className="text-yellow-400 mr-3" size={28} />
-        <h2 className="text-2xl font-bold">Top Alumni Contributors</h2>
-      </div>
-      
-      {leaders.length === 0 ? (
-        <p className="text-indigo-200 italic">No contributions yet. Be the first to top the board!</p>
-      ) : (
-        <div className="space-y-4">
-          {leaders.map((leader, index) => (
-            <div key={leader._id._id} className="flex justify-between items-center bg-white/10 p-3 rounded-lg backdrop-blur-sm">
-              <div className="flex items-center">
-                {/* Dynamically render Gold, Silver, Bronze icons for top 3 */}
-                {index === 0 && <Medal className="text-yellow-400 mr-3" size={24} />}
-                {index === 1 && <Medal className="text-gray-300 mr-3" size={24} />}
-                {index === 2 && <Medal className="text-amber-600 mr-3" size={24} />}
-                {index > 2 && <Award className="text-indigo-300 mr-3" size={24} />}
-                
-                <span className="font-semibold">{leader._id.email.split('@')[0]}</span>
-              </div>
-              <div className="bg-white text-indigo-900 px-3 py-1 rounded-full text-sm font-black shadow">
-                {leader.score} {leader.score === 1 ? 'Job' : 'Jobs'}
-              </div>
+    <section className="mt-16">
+      <div className="card overflow-hidden p-7 md:p-10">
+        <div className="flex items-start justify-between border-b border-line pb-6">
+          <div>
+            <div className="eyebrow" style={{ color: 'var(--color-gold)' }}>
+              <Trophy size={13} />
+              Contribution
             </div>
-          ))}
+            <h2 className="display mt-3 text-3xl">Top contributors</h2>
+            <p className="mt-2 text-sm text-muted">
+              Points earned for posting opportunities and for how far their referrals progress.
+            </p>
+          </div>
+          <span className="font-serif text-4xl text-muted/30 md:text-5xl">01</span>
         </div>
-      )}
-    </div>
+
+        {leaders.length === 0 ? (
+          <p className="py-10 text-center font-serif text-lg italic text-muted">
+            No contributions yet — be the first to top the board.
+          </p>
+        ) : (
+          <div className="mt-2">
+            {leaders.map((l) => (
+              <LeaderRow
+                key={l.user?._id || l.rank}
+                {...l}
+                highlight={meId && l.user?._id === meId}
+                you={meId && l.user?._id === meId}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Your rank pinned at the bottom when you're outside the visible list */}
+        {me && !me.inTop && (
+          <div className="mt-2">
+            <div className="py-2 text-center font-serif text-lg leading-none text-muted/40">···</div>
+            <LeaderRow {...me} highlight you />
+          </div>
+        )}
+      </div>
+    </section>
   );
 };
 

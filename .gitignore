@@ -1,27 +1,53 @@
+# ---------- Dependencies ----------
 node_modules/
 client/node_modules/
 server/node_modules/
+.pnp
+.pnp.js
 
+# ---------- Environment / secrets ----------
 .env
-.env.local
 .env.*
-server/.env
+!.env.example
 client/.env
+client/.env.*
+server/.env
+server/.env.*
 
+# ---------- Uploads & generated files ----------
 server/uploads/
 server/public/pdfs/
 server/temp/
 *.pdf
 
+# ---------- Builds ----------
 client/dist/
 client/build/
 client/.vite/
+dist/
+build/
 
+# ---------- Logs ----------
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-.DS_Store
-Thumbs.db
+# ---------- Caches ----------
+.cache/
+.eslintcache
+.parcel-cache/
+
+# ---------- Editor / OS ----------
 .vscode/
 .idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ---------- Misc ----------
+coverage/
+*.local
+_*.mjs

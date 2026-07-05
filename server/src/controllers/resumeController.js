@@ -34,12 +34,13 @@ export const analyzeResume = async (req, res) => {
 
 export const generateMessage = async (req, res) => {
   try {
-    const { studentDetails, alumniDetails, opportunityDetails } = req.body;
-    
+    const { studentDetails, alumniDetails, opportunityDetails, messageType } = req.body;
+
     const message = await generateReferralMessageWithAI(
-      studentDetails, 
-      alumniDetails, 
-      opportunityDetails
+      studentDetails,
+      alumniDetails,
+      opportunityDetails,
+      messageType
     );
 
     res.status(200).json({ generatedMessage: message });

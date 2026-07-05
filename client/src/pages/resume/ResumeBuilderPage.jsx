@@ -2,6 +2,36 @@ import { useState, useEffect } from 'react';
 import axiosInstance from '../../api/axiosInstance';
 import { Save, Download, Plus, Trash2, FileText, Loader2 } from 'lucide-react';
 
+const ArraySection = ({ title, section, items, columns, fields, textareas, onAdd, onRemove, onChange, disableAdd }) => (
+  <section className="border-t border-line pt-8">
+    <div className="mb-5 flex items-center justify-between">
+      <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted">{title}</h2>
+      <button
+        onClick={onAdd}
+        disabled={disableAdd}
+        className={`btn-ghost px-3 py-1.5 text-xs ${disableAdd ? 'cursor-not-allowed opacity-40' : ''}`}
+      >
+        <Plus size={14} /> Add
+      </button>
+    </div>
+    {items.map((item, index) => (
+      <div key={index} className="group relative mb-4 rounded-xl border border-line bg-paper-2 p-5">
+        <button onClick={() => onRemove(index)} className="absolute right-4 top-4 text-muted opacity-0 transition-all hover:text-ink group-hover:opacity-100">
+          <Trash2 size={16} />
+        </button>
+        <div className={`grid grid-cols-1 gap-4 pr-8 ${columns === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+          {fields.map((f) => (
+            <input key={f.key} type="text" placeholder={f.placeholder} className="field" value={item[f.key] || ''} onChange={(e) => onChange(section, index, f.key, e.target.value)} />
+          ))}
+        </div>
+        {textareas?.map((t) => (
+          <textarea key={t.key} placeholder={t.placeholder} className="field mt-4 h-20 resize-none" value={item[t.key] || ''} onChange={(e) => onChange(section, index, t.key, e.target.value)} />
+        ))}
+      </div>
+    ))}
+  </section>
+);
+
 const ResumeBuilderPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -13,7 +43,7 @@ const ResumeBuilderPage = () => {
     skills: '',
     experience: [{ company: '', role: '', duration: '', description: '' }],
     projects: [{ title: '', techStack: '', description: '' }],
-    education: [{ institution: '', degree: '', year: '', gpa: '' }]
+    education: [{ institution: '', degree: '', year: '', gpa: '' }],
   });
 
   useEffect(() => {
@@ -21,11 +51,10 @@ const ResumeBuilderPage = () => {
       try {
         const { data } = await axiosInstance.get('/resume-builder/draft');
         if (data && Object.keys(data).length > 0) {
-          // Merge fetched data with default structure to avoid undefined errors
-          setFormData(prev => ({ ...prev, ...data }));
+          setFormData((prev) => ({ ...prev, ...data }));
         }
       } catch (error) {
-        console.error("Error fetching draft:", error);
+        console.error('Error fetching draft:', error);
       } finally {
         setLoading(false);
       }
@@ -33,10 +62,7 @@ const ResumeBuilderPage = () => {
     fetchDraft();
   }, []);
 
-  // Helpers for nested state and arrays
-  const handleContactChange = (field, value) => {
-    setFormData({ ...formData, contact: { ...formData.contact, [field]: value } });
-  };
+  const handleContactChange = (field, value) => setFormData({ ...formData, contact: { ...formData.contact, [field]: value } });
 
   const handleArrayChange = (section, index, field, value) => {
     const newArray = [...formData[section]];
@@ -44,30 +70,18 @@ const ResumeBuilderPage = () => {
     setFormData({ ...formData, [section]: newArray });
   };
 
-  const addArrayItem = (section, emptyObject) => {
-    setFormData({ ...formData, [section]: [...formData[section], emptyObject] });
-  };
+  const addArrayItem = (section, emptyObject) => setFormData({ ...formData, [section]: [...formData[section], emptyObject] });
 
-  const removeArrayItem = (section, index) => {
-    const newArray = formData[section].filter((_, i) => i !== index);
-    setFormData({ ...formData, [section]: newArray });
-  };
+  const removeArrayItem = (section, index) => setFormData({ ...formData, [section]: formData[section].filter((_, i) => i !== index) });
 
   const isLastItemEmpty = (section) => {
     const array = formData[section];
-    if (!array || array.length === 0) return false; 
-    
+    if (!array || array.length === 0) return false;
     const lastItem = array[array.length - 1];
-    
-    // Loop through all keys in the card
     for (const key in lastItem) {
-        if (key !== '_id') {
-          if (lastItem[key] && String(lastItem[key]).trim() !== '') {
-              return false; 
-          }
-        }
+      if (key !== '_id' && lastItem[key] && String(lastItem[key]).trim() !== '') return false;
     }
-    return true; 
+    return true;
   };
 
   const handleSaveDraft = async () => {
@@ -89,9 +103,7 @@ const ResumeBuilderPage = () => {
     setMessage('');
     try {
       await axiosInstance.post('/resume-builder/draft', formData);
-      
       const response = await axiosInstance.post('/resume-builder/export', {}, { responseType: 'blob' });
-      
       const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
@@ -99,7 +111,6 @@ const ResumeBuilderPage = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
       setMessage('PDF downloaded successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -110,156 +121,101 @@ const ResumeBuilderPage = () => {
     }
   };
 
-
   const handleClearForm = () => {
-    const confirmClear = window.confirm("Are you sure you want to clear the entire form? This cannot be undone.");
-    if (confirmClear) {
-        setFormData({
+    if (window.confirm('Are you sure you want to clear the entire form? This cannot be undone.')) {
+      setFormData({
         contact: { fullName: '', email: '', phone: '', linkedin: '' },
-        skills: '',
-        experience: [],
-        projects: [],
-        education: []
-        });
-        setMessage('Form cleared. You can start fresh!');
-        setTimeout(() => setMessage(''), 3000);
+        skills: '', experience: [], projects: [], education: [],
+      });
+      setMessage('Form cleared. You can start fresh!');
+      setTimeout(() => setMessage(''), 3000);
     }
-    };
+  };
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading your draft...</div>;
+  if (loading) return <div className="flex justify-center py-32"><Loader2 className="animate-spin text-ink" size={32} /></div>;
 
   return (
-    <div className="max-w-5xl mx-auto mt-8 px-4 pb-20">
-      <div className="flex justify-between items-center mb-6 border-b pb-4">
+    <div className="shell max-w-5xl py-14">
+      <header className="animate-fade-up flex flex-col gap-6 border-b border-line pb-8 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <FileText className="mr-3 text-blue-600" size={32} /> Resume Builder
+          <div className="eyebrow"><span className="h-1 w-1 rounded-full bg-ink" /> Resume builder</div>
+          <h1 className="display mt-5 flex items-center gap-3 text-4xl md:text-5xl">
+            <FileText size={30} strokeWidth={1.6} /> Resume builder
           </h1>
-          <p className="text-gray-600 mt-1">Fill out the details below and generate a clean, ATS-friendly PDF.</p>
+          <p className="mt-3 text-sm text-muted">Compose your details and export a clean, ATS-friendly document.</p>
         </div>
-        <div className="flex space-x-3">
-            <button 
-                onClick={handleClearForm} 
-                className="flex items-center px-4 py-2 bg-red-100 text-red-700 font-semibold rounded hover:bg-red-200 transition">
-                <Trash2 size={18} className="mr-2" />
-                Start Fresh
-            </button>
-            <button onClick={handleSaveDraft} disabled={saving} className="flex items-center px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded hover:bg-gray-300 transition">
-                {saving ? <Loader2 size={18} className="animate-spin mr-2" /> : <Save size={18} className="mr-2" />}
-                Save Draft
-            </button>
-            <button onClick={handleExportPDF} disabled={exporting} className="flex items-center px-4 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition shadow-sm">
-                {exporting ? <Loader2 size={18} className="animate-spin mr-2" /> : <Download size={18} className="mr-2" />}
-                Export PDF
-            </button>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={handleClearForm} className="btn-ghost"><Trash2 size={15} /> Start fresh</button>
+          <button onClick={handleSaveDraft} disabled={saving} className="btn-secondary">
+            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Save draft
+          </button>
+          <button onClick={handleExportPDF} disabled={exporting} className="btn-primary">
+            {exporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} Export PDF
+          </button>
         </div>
-      </div>
+      </header>
 
       {message && (
-        <div className={`p-3 mb-6 rounded-md font-medium text-center ${message.includes('Failed') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+        <div className="animate-fade-up mt-6 rounded-lg border border-line bg-paper-2 px-4 py-3 text-center text-sm font-medium text-ink">
           {message}
         </div>
       )}
 
-      <div className="space-y-8 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-        
-        {/* CONTACT SECTION */}
+      <div className="animate-fade-up mt-6 card space-y-10 p-8">
+        {/* Contact */}
         <section>
-          <h2 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Contact Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="text" placeholder="Full Name" className="border p-2 rounded" value={formData.contact.fullName} onChange={(e) => handleContactChange('fullName', e.target.value)} />
-            <input type="email" placeholder="Email Address" className="border p-2 rounded" value={formData.contact.email} onChange={(e) => handleContactChange('email', e.target.value)} />
-            <input type="text" placeholder="Phone Number" className="border p-2 rounded" value={formData.contact.phone} onChange={(e) => handleContactChange('phone', e.target.value)} />
-            <input type="text" placeholder="LinkedIn URL" className="border p-2 rounded" value={formData.contact.linkedin} onChange={(e) => handleContactChange('linkedin', e.target.value)} />
+          <h2 className="mb-5 text-sm font-semibold uppercase tracking-[0.16em] text-muted">Contact information</h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <input type="text" placeholder="Full name" className="field" value={formData.contact.fullName} onChange={(e) => handleContactChange('fullName', e.target.value)} />
+            <input type="email" placeholder="Email address" className="field" value={formData.contact.email} onChange={(e) => handleContactChange('email', e.target.value)} />
+            <input type="text" placeholder="Phone number" className="field" value={formData.contact.phone} onChange={(e) => handleContactChange('phone', e.target.value)} />
+            <input type="text" placeholder="LinkedIn URL" className="field" value={formData.contact.linkedin} onChange={(e) => handleContactChange('linkedin', e.target.value)} />
           </div>
         </section>
 
-        {/* SKILLS SECTION */}
-        <section>
-          <h2 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Skills</h2>
-          <textarea placeholder="e.g. JavaScript, React, Node.js, Project Management (Comma separated)" className="w-full border p-2 rounded h-20" value={formData.skills} onChange={(e) => setFormData({...formData, skills: e.target.value})} />
+        {/* Skills */}
+        <section className="border-t border-line pt-8">
+          <h2 className="mb-5 text-sm font-semibold uppercase tracking-[0.16em] text-muted">Skills</h2>
+          <textarea placeholder="e.g. JavaScript, React, Node.js, Project Management (comma separated)" className="field h-20 resize-none" value={formData.skills} onChange={(e) => setFormData({ ...formData, skills: e.target.value })} />
         </section>
 
-        {/* EXPERIENCE SECTION */}
-        <section>
-          <div className="flex justify-between items-center mb-4 border-b pb-2">
-            <h2 className="text-xl font-bold text-gray-800">Experience</h2>
-            <button 
-                onClick={() => addArrayItem('experience', { company: '', role: '', duration: '', description: '' })} 
-                disabled={isLastItemEmpty('experience')}
-                className={`font-medium flex items-center text-sm transition ${isLastItemEmpty('experience') ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-800'}`}
-                >
-                <Plus size={16} className="mr-1" /> Add Job
-            </button>
-          </div>
-          {formData.experience.map((exp, index) => (
-            <div key={index} className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-100 relative group">
-              <button onClick={() => removeArrayItem('experience', index)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
-                <Trash2 size={18} />
-              </button>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3 pr-8">
-                <input type="text" placeholder="Company" className="border p-2 rounded" value={exp.company} onChange={(e) => handleArrayChange('experience', index, 'company', e.target.value)} />
-                <input type="text" placeholder="Role" className="border p-2 rounded" value={exp.role} onChange={(e) => handleArrayChange('experience', index, 'role', e.target.value)} />
-                <input type="text" placeholder="Duration (e.g. Jan 2024 - Present)" className="border p-2 rounded" value={exp.duration} onChange={(e) => handleArrayChange('experience', index, 'duration', e.target.value)} />
-              </div>
-              <textarea placeholder="Describe your responsibilities and achievements..." className="w-full border p-2 rounded h-20" value={exp.description} onChange={(e) => handleArrayChange('experience', index, 'description', e.target.value)} />
-            </div>
-          ))}
-        </section>
+        <ArraySection
+          title="Experience" section="experience" items={formData.experience} columns={3}
+          fields={[
+            { key: 'company', placeholder: 'Company' },
+            { key: 'role', placeholder: 'Role' },
+            { key: 'duration', placeholder: 'Duration (e.g. Jan 2024 – Present)' },
+          ]}
+          textareas={[{ key: 'description', placeholder: 'Describe your responsibilities and achievements…' }]}
+          onAdd={() => addArrayItem('experience', { company: '', role: '', duration: '', description: '' })}
+          onRemove={(i) => removeArrayItem('experience', i)} onChange={handleArrayChange}
+          disableAdd={isLastItemEmpty('experience')}
+        />
 
-        {/* PROJECTS SECTION */}
-        <section>
-          <div className="flex justify-between items-center mb-4 border-b pb-2">
-            <h2 className="text-xl font-bold text-gray-800">Projects</h2>
-            <button 
-                onClick={() => addArrayItem('projects', { title: '', techStack: '', description: '' })} 
-                disabled={isLastItemEmpty('projects')}
-                className={`font-medium flex items-center text-sm transition ${isLastItemEmpty('projects') ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-800'}`}
-                >
-                <Plus size={16} className="mr-1" /> Add Project
-            </button>
-          </div>
-          {formData.projects.map((proj, index) => (
-            <div key={index} className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-100 relative group">
-              <button onClick={() => removeArrayItem('projects', index)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
-                <Trash2 size={18} />
-              </button>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3 pr-8">
-                <input type="text" placeholder="Project Title" className="border p-2 rounded" value={proj.title} onChange={(e) => handleArrayChange('projects', index, 'title', e.target.value)} />
-                <input type="text" placeholder="Tech Stack (e.g. React, MongoDB)" className="border p-2 rounded" value={proj.techStack} onChange={(e) => handleArrayChange('projects', index, 'techStack', e.target.value)} />
-              </div>
-              <textarea placeholder="What did you build?" className="w-full border p-2 rounded h-20" value={proj.description} onChange={(e) => handleArrayChange('projects', index, 'description', e.target.value)} />
-            </div>
-          ))}
-        </section>
+        <ArraySection
+          title="Projects" section="projects" items={formData.projects} columns={2}
+          fields={[
+            { key: 'title', placeholder: 'Project title' },
+            { key: 'techStack', placeholder: 'Tech stack (e.g. React, MongoDB)' },
+          ]}
+          textareas={[{ key: 'description', placeholder: 'What did you build?' }]}
+          onAdd={() => addArrayItem('projects', { title: '', techStack: '', description: '' })}
+          onRemove={(i) => removeArrayItem('projects', i)} onChange={handleArrayChange}
+          disableAdd={isLastItemEmpty('projects')}
+        />
 
-        {/* EDUCATION SECTION */}
-        <section>
-          <div className="flex justify-between items-center mb-4 border-b pb-2">
-            <h2 className="text-xl font-bold text-gray-800">Education</h2>
-            <button 
-                onClick={() => addArrayItem('education', { institution: '', degree: '', year: '', gpa: '' })} 
-                disabled={isLastItemEmpty('education')}
-                className={`font-medium flex items-center text-sm transition ${isLastItemEmpty('education') ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-800'}`}
-                >
-                <Plus size={16} className="mr-1" /> Add Education
-            </button>
-          </div>
-          {formData.education.map((edu, index) => (
-            <div key={index} className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-100 relative group">
-              <button onClick={() => removeArrayItem('education', index)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
-                <Trash2 size={18} />
-              </button>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-8">
-                <input type="text" placeholder="Institution" className="border p-2 rounded" value={edu.institution} onChange={(e) => handleArrayChange('education', index, 'institution', e.target.value)} />
-                <input type="text" placeholder="Degree (e.g. B.Tech Computer Science)" className="border p-2 rounded" value={edu.degree} onChange={(e) => handleArrayChange('education', index, 'degree', e.target.value)} />
-                <input type="text" placeholder="Graduation Year" className="border p-2 rounded" value={edu.year} onChange={(e) => handleArrayChange('education', index, 'year', e.target.value)} />
-                <input type="text" placeholder="GPA / Grade" className="border p-2 rounded" value={edu.gpa} onChange={(e) => handleArrayChange('education', index, 'gpa', e.target.value)} />
-              </div>
-            </div>
-          ))}
-        </section>
-
+        <ArraySection
+          title="Education" section="education" items={formData.education} columns={2}
+          fields={[
+            { key: 'institution', placeholder: 'Institution' },
+            { key: 'degree', placeholder: 'Degree (e.g. B.Tech Computer Science)' },
+            { key: 'year', placeholder: 'Graduation year' },
+            { key: 'gpa', placeholder: 'GPA / grade' },
+          ]}
+          onAdd={() => addArrayItem('education', { institution: '', degree: '', year: '', gpa: '' })}
+          onRemove={(i) => removeArrayItem('education', i)} onChange={handleArrayChange}
+          disableAdd={isLastItemEmpty('education')}
+        />
       </div>
     </div>
   );
